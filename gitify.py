@@ -1,17 +1,19 @@
 import os
 import time
+import json
+import urllib
 from slackclient import SlackClient
 
 
 # starterbot's ID as an environment variable
 BOT_ID = os.environ.get("BOT_ID")
-
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
-EXAMPLE_COMMAND = "do"
+
+EXAMPLE_COMMAND = "search"
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+slack_client = SlackClient(os.environ.get("SLACK_BOT_TOKEN"))
 
 
 def handle_command(command, channel):
@@ -20,12 +22,25 @@ def handle_command(command, channel):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-               "* command with numbers, delimited by spaces."
+    response = "try @gitify search <stuff to search>  e.g @gitify search ionic sms plugin"                
     if command.startswith(EXAMPLE_COMMAND):
-        response = "Sure...write some more code then I can do that!"
-    slack_client.api_call("chat.postMessage", channel=channel,
-                          text=response, as_user=True)
+        query = urllib.quote_plus(command[7:])
+        response = {
+            'repositories': 'https://github.com/search?q='+query+'&type=Repositories&utf8=%E2%9C%93',
+            'codes': 'https://github.com/search?q='+query+'&type=Code&utf8=%E2%9C%93',
+            'commits': 'https://github.com/search?q='+query+'&type=Commits&utf8=%E2%9C%93',
+            'Issues': 'https://github.com/search?q='+query+'&type=Issues&utf8=%E2%9C%93',
+            'wikis': 'https://github.com/search?q='+query+'&type=Wikis&utf8=%E2%9C%93',
+            'users': 'https://github.com/search?q='+query+'&type=Users&utf8=%E2%9C%93'
+        }
+        message = "`"+str(json.dumps(response))+"`"
+
+    slack_client.api_call(
+        "chat.postMessage", 
+        channel=channel,
+        text=message, 
+        as_user=True
+    )
 
 
 def parse_slack_output(slack_rtm_output):
